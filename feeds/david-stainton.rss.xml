@@ -1,5 +1,201 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>code sabbatical</title><link>/</link><description></description><atom:link href="/feeds/david-stainton.rss.xml" rel="self"></atom:link><lastBuildDate>Mon, 11 Aug 2014 16:00:00 +0200</lastBuildDate><item><title>"data-less" travel opsec</title><link>/data-less-travel-opsec.html</link><description>&lt;h3&gt;Operational security practices for international travel&lt;/h3&gt;
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>code sabbatical</title><link>/</link><description></description><atom:link href="/feeds/david-stainton.rss.xml" rel="self"></atom:link><lastBuildDate>Tue, 12 Aug 2014 13:00:00 +0200</lastBuildDate><item><title>create a Tahoe-LAFS onion grid</title><link>/create-a-tahoe-lafs-onion-grid.html</link><description>&lt;h3&gt;how to create a Tahoe-LAFS onion grid&lt;/h3&gt;
+&lt;p&gt;I think a workshop for creating a collective onion grid would be a great
+activity for hackerspaces and cryptoparties. It will allow participants to
+securely backup and share files. Each participant configures
+one or more storage servers. The idea is that all the storage servers
+announce themselves to the same introducer node(s). Clients using the
+grid use the introducer node(s) to discover new storage servers.&lt;/p&gt;
+&lt;h4&gt;what is an onion grid?&lt;/h4&gt;
+&lt;p&gt;An onion grid refers to a Tahoe-LAFS storage grid, a collection of Tahoe-LAFS storage servers that are only accessible via Tor hidden services. That means the identity/location of the storage servers are protected by the Tor network.&lt;/p&gt;
+&lt;p&gt;At this time the Tor Project is redesigning Tor hidden services to have more powerful security and anonymity guarantees; &lt;a href="https://blog.torproject.org/blog/hidden-services-need-some-love"&gt;Tor hidden services need some love&lt;/a&gt;.
+Endeavors using Tahoe-LAFS onion grids will benefit from these future design changes to Tor Hidden Services.&lt;/p&gt;
+&lt;h4&gt;use Ansible to configure an onion grid storage server&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;note:&lt;/strong&gt; this procedure is written for use with Tails but
+could easily be applied to other operating systems&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;1. setup basic Ansible working directory hierarchy&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;mkdir -p /home/amnesia/Persistent/projects/ansible-base/roles
+mkdir -p /home/amnesia/Persistent/projects/ansible-base/host_vars
+&lt;span class="nb"&gt;cd&lt;/span&gt; ~/Persistent/projects/ansible-base/roles
+git clone git+https://github.com/david415/ansible-tahoe-lafs.git
+git clone git+https://github.com/david415/ansible-tor.git
+&lt;span class="nb"&gt;cd&lt;/span&gt; ..
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;2. install Ansible in a python virtual env&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Get the latest stable python virtualenv and cryptographically verify it.
+save it to: &lt;strong&gt;~/Persistent/virtualenv-x.xx.x/&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Then create a virtual env to run ansible:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;~/Persistent/virtualenv-x.xx.x/virtualenv.py --system-site-packages Persistent/virtenv-ansible
+New python executable in Persistent/virtenv-ansible/bin/python
+Installing setuptools, pip...done.
+amnesia@amnesia:~&lt;span class="err"&gt;$&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Activate the virtual env and install ansible and dependencies:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;. ~/Persistent/virtenv-ansible/bin/activate
+sudo apt-get install build-essential python-dev
+pip install ecdsa markupsafe paramiko PyYAML Jinja2 httplib2
+pip install ansible
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Place these two Ansible roles for Tor and Tahoe-LAFS in the roles directory:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /home/amnesia/Persistent/projects/ansible-base/roles
+git clone https://github.com/david415/ansible-tahoe-lafs.git
+git clone https://github.com/david415/ansible-tor.git
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;3. use Ansible to configure an introducer and storage node on one machine&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Configure a playbook for :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cp roles/ansible-tahoe-lafs/playbook-examples/oniongrid_introducer_storage.yml .
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You should edit this &lt;strong&gt;oniongrid_introducer_storage.yml&lt;/strong&gt; playbook because it makes some assumptions for instance:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;you want your introducer name name set to "IntroducerNode"&lt;/li&gt;
+&lt;li&gt;TCP port numbers are set to arbitary values which you may want to change&lt;/li&gt;
+&lt;li&gt;this playbook assumes you are using Tails and want the introducer inventory stored in &lt;strong&gt;/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;this playbook assumes your remote ssh user is "human" and has a home directory in "/home/human"&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;hosts&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;onion-introducer-storage&lt;/span&gt;
+  &lt;span class="l-Scalar-Plain"&gt;vars&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;hidden_services_parent_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/var/lib/tor/services&amp;quot;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;introducer_node_name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;IntroducerNode&amp;quot;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;introducer_tub_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;33000&amp;quot;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;introducer_web_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;33001&amp;quot;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;storage_service_name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;storage&amp;quot;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;storage_tub_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;34000&amp;quot;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;storage_web_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;34001&amp;quot;&lt;/span&gt;
+    &lt;span class="l-Scalar-Plain"&gt;hidden_services&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;[&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;intro-web&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;ports&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;[{&lt;/span&gt; &lt;span class="nv"&gt;virtport&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;introducer_web_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;target&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;127.0.0.1:{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;introducer_web_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt; &lt;span class="p-Indicator"&gt;}]&lt;/span&gt; &lt;span class="p-Indicator"&gt;},&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;introducer&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;ports&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;[{&lt;/span&gt; &lt;span class="nv"&gt;virtport&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;introducer_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;target&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;127.0.0.1:{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;introducer_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt; &lt;span class="p-Indicator"&gt;}]&lt;/span&gt; &lt;span class="p-Indicator"&gt;},&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;storage-web&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;ports&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;[{&lt;/span&gt; &lt;span class="nv"&gt;virtport&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;storage_web_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;target&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;127.0.0.1:{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;storage_web_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt; &lt;span class="p-Indicator"&gt;}]&lt;/span&gt; &lt;span class="p-Indicator"&gt;},&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;storage&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;ports&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;[{&lt;/span&gt; &lt;span class="nv"&gt;virtport&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;storage_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;target&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;127.0.0.1:{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;storage_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt; &lt;span class="p-Indicator"&gt;}]&lt;/span&gt; &lt;span class="p-Indicator"&gt;},&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;]&lt;/span&gt;
+  &lt;span class="l-Scalar-Plain"&gt;roles&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;role&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;ansible-tor&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tor_wait_for_hidden_services&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;yes&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tor_distribution_release&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;wheezy&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tor_ExitPolicy&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;reject&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;*:*&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tor_hidden_services&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;hidden_services&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tor_hidden_services_parent_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;hidden_services_parent_dir&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;sudo&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;yes&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;}&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;role&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;ansible-tahoe-lafs&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_introducer&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;yes&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_local_introducers_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;use_torsocks&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;yes&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_hidden_service_name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;introducer&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tor_hidden_services_parent_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;hidden_services_parent_dir&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_introducer_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;introducer_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_web_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;introducer_web_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_tub_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;introducer_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_shares_needed&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;2&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_shares_happy&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;3&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_shares_total&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;4&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;backports_url&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;http://ftp.de.debian.org/debian/&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;backports_distribution_release&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;wheezy-backports&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_source_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/human/tahoe-lafs-src&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_run_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/human/tahoe_introducer&amp;quot;&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;}&lt;/span&gt;
+    &lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;role&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;ansible-tahoe-lafs&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_local_introducers_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_storage_enabled&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;true&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_hidden_service_name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;storage&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tor_hidden_services_parent_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;hidden_services_parent_dir&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_web_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;storage_web_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_tub_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;storage_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_shares_needed&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;2&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_shares_happy&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;3&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_shares_total&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;4&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;backports_url&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;http://ftp.de.debian.org/debian/&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;backports_distribution_release&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;wheezy-backports&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_source_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/human/tahoe-lafs-src&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="nv"&gt;tahoe_run_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/home/human/tahoe_storage&amp;quot;&lt;/span&gt;
+      &lt;span class="p-Indicator"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If say for instance you've got an Ansible inventory file called &lt;strong&gt;master-host-inventory&lt;/strong&gt;
+it could look like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;[onion-introducer-storage]&lt;/span&gt;
+&lt;span class="na"&gt;zzz.zzz.zzz.zzz tahoe_nickname&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;RobotSmashPunyHumans&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The beginning of this playbook specifies the &lt;strong&gt;onion-introducer-storage&lt;/strong&gt; host group.
+Run the playbook like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;ansible-playbook -i master-host-inventory oniongrid-storage-nodes.yml -u human
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If all goes well your new introducer FURL should be placed locally in this file:
+&lt;strong&gt;/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;4. use Ansible to configure the other storage nodes in your grid&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;note:&lt;/strong&gt; this step requires you to have a Tahoe-LAFS introducer FURL... perhaps generated from the previous step&lt;/p&gt;
+&lt;p&gt;Firstly, if you've skipped the previous step you'll need to create an Ansible inventory file, e.g. at this location:
+&lt;strong&gt;/home/amnesia/Persistent/projects/ansible-base/master-host-inventory&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Use Ansible to configure one or more storage servers where we specify the Tahoe nickname like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;[onion-storage]&lt;/span&gt;
+&lt;span class="na"&gt;xxx.xxx.xxx.xxx tahoe_nickname&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;RobotOnlyStorageNode&lt;/span&gt;
+&lt;span class="na"&gt;yyy.yyy.yyy.yyy tahoe_nickname&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;RobotsAgainstHumans&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Configure a playbook for your Onion grid storage servers:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cp roles/ansible-tahoe-lafs/playbook-examples/oniongrid-storage-nodes.yml .
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You must edit &lt;strong&gt;oniongrid-storage-nodes.yml&lt;/strong&gt;, it needs to contain appropriate settings such as the introducer FURL for your onion grid:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;hosts&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l-Scalar-Plain"&gt;onion-storage&lt;/span&gt;
+&lt;span class="l-Scalar-Plain"&gt;vars&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+&lt;span class="l-Scalar-Plain"&gt;oniongrid_introducer_furl&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;pb://iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii@bbbbbbbbbbbbbbbb.onion:37483/swisssssss&amp;quot;&lt;/span&gt;
+&lt;span class="l-Scalar-Plain"&gt;oniongrid_hidden_service_name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;tahoe-storage&amp;quot;&lt;/span&gt;
+&lt;span class="l-Scalar-Plain"&gt;oniongrid_tub_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;37493&amp;quot;&lt;/span&gt;
+&lt;span class="l-Scalar-Plain"&gt;oniongrid_web_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;3456&amp;quot;&lt;/span&gt;
+&lt;span class="l-Scalar-Plain"&gt;oniongrid_hidden_services_parent_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;/var/lib/tor/services&amp;quot;&lt;/span&gt;
+&lt;span class="l-Scalar-Plain"&gt;oniongrid_hidden_services&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;[&lt;/span&gt;
+&lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;tahoe-web&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;ports&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;[{&lt;/span&gt; &lt;span class="nv"&gt;virtport&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_web_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;target&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;127.0.0.1:{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_web_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt; &lt;span class="p-Indicator"&gt;}]&lt;/span&gt; &lt;span class="p-Indicator"&gt;},&lt;/span&gt;
+&lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;tahoe-storage&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;ports&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p-Indicator"&gt;[{&lt;/span&gt; &lt;span class="nv"&gt;virtport&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;target&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;127.0.0.1:{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt; &lt;span class="p-Indicator"&gt;}]&lt;/span&gt; &lt;span class="p-Indicator"&gt;},&lt;/span&gt;
+&lt;span class="p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l-Scalar-Plain"&gt;roles&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt;
+&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;role&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;ansible-tor&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tor_wait_for_hidden_services&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;yes&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tor_distribution_release&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;wheezy&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tor_ExitPolicy&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;reject&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;*:*&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tor_hidden_services&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_hidden_services&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tor_hidden_services_parent_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_hidden_services_parent_dir&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;sudo&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;yes&lt;/span&gt;
+&lt;span class="p-Indicator"&gt;}&lt;/span&gt;
+&lt;span class="p-Indicator"&gt;-&lt;/span&gt; &lt;span class="p-Indicator"&gt;{&lt;/span&gt; &lt;span class="nv"&gt;role&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;ansible-tahoe-lafs&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_introducer_furl&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_introducer_furl&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_storage_enabled&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;true&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_hidden_service_name&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_hidden_service_name&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tor_hidden_services_parent_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_hidden_services_parent_dir&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_web_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_web_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_tub_port&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;oniongrid_tub_port&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_shares_needed&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;2&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_shares_happy&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;3&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_shares_total&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;4&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;backports_url&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;http://ftp.de.debian.org/debian/&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;backports_distribution_release&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;wheezy-backports&amp;quot;&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_source_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;/home/human/tahoe-lafs-src&lt;/span&gt;&lt;span class="p-Indicator"&gt;,&lt;/span&gt;
+&lt;span class="nv"&gt;tahoe_run_dir&lt;/span&gt;&lt;span class="p-Indicator"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;/home/human/tahoe_client&lt;/span&gt;
+&lt;span class="p-Indicator"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Configure your server(s)... &lt;strong&gt;Run the playbook:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;ansible-playbook -i onion-storage-inventory oniongrid-storage-nodes.yml -u human
+&lt;/pre&gt;&lt;/div&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">David Stainton</dc:creator><pubDate>Tue, 12 Aug 2014 13:00:00 +0200</pubDate><guid>tag:,2014-08-12:create-a-tahoe-lafs-onion-grid.html</guid><category>Tahoe-LAFS</category><category>Tor hidden services</category><category>Tor</category></item><item><title>"data-less" travel opsec</title><link>/data-less-travel-opsec.html</link><description>&lt;h3&gt;Operational security practices for international travel&lt;/h3&gt;
 &lt;p&gt;aka&lt;/p&gt;
 &lt;h3&gt;Secure Covert Backup Strategy for Tails using Tahoe-LAFS&lt;/h3&gt;
 &lt;p&gt;&lt;strong&gt;note:&lt;/strong&gt; Tails is a good choice but this could be applied to other operating systems/Linux distros.
@@ -95,7 +291,7 @@ You have 2 choices:&lt;/p&gt;
 &lt;p&gt;Do you backup your personal data?&lt;/p&gt;
 &lt;p&gt;Using Dropbox, AWS storage or Google Drive to backup data doesn't give users control over the confidentiality of their data.
 But we have a choice! We can choose to use verified end to end crypto (read the &lt;a href="http://www.activism.net/cypherpunk/manifesto.html"&gt;cypherpunks manifesto&lt;/a&gt;).
-When you use Tahoe-LAFS you are choosing to be in control of the verifiability, confidentiality and erasure encoding or your data.&lt;/p&gt;
+When you use Tahoe-LAFS you are choosing to be in control of the verifiability, confidentiality and erasure encoding of your data.&lt;/p&gt;
 &lt;p&gt;Tahoe-LAFS storage servers only see ciphertext blobs... additionally the Tahoe-LAFS cryptographic "capabilities model"
 is essentially a distributed access control system. The storage servers do not authorize access to data; instead the possessor
 of the cryptographic capabilities can choose to share that capability... or "diminish" the cap before sharing;

@@ -15,12 +15,233 @@
                 <h1><a href="/">code sabbatical </a></h1>
                 <nav><ul>
                     <li><a href="/category/tails-tahoe-lafs.html">Tails, Tahoe-LAFS</a></li>
+                    <li><a href="/category/tor-hidden-services-tahoe-lafs.html">Tor hidden services, Tahoe-LAFS</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="/data-less-travel-opsec.html">"data-less" travel opsec</a></h1>
+                    <h1 class="entry-title"><a href="/create-a-tahoe-lafs-onion-grid.html">create a Tahoe-LAFS onion grid</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2014-08-12T13:00:00">
+                Published: Tue 12 August 2014
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/david-stainton.html">David Stainton</a>
+        </address>
+<p>In <a href="/category/tor-hidden-services-tahoe-lafs.html">Tor hidden services, Tahoe-LAFS</a>. </p>
+<p>tags: <a href="/tag/tahoe-lafs.html">Tahoe-LAFS</a> <a href="/tag/tor-hidden-services.html">Tor hidden services</a> <a href="/tag/tor.html">Tor</a> </p>
+</footer><!-- /.post-info --><h3>how to create a Tahoe-LAFS onion grid</h3>
+<p>I think a workshop for creating a collective onion grid would be a great
+activity for hackerspaces and cryptoparties. It will allow participants to
+securely backup and share files. Each participant configures
+one or more storage servers. The idea is that all the storage servers
+announce themselves to the same introducer node(s). Clients using the
+grid use the introducer node(s) to discover new storage servers.</p>
+<h4>what is an onion grid?</h4>
+<p>An onion grid refers to a Tahoe-LAFS storage grid, a collection of Tahoe-LAFS storage servers that are only accessible via Tor hidden services. That means the identity/location of the storage servers are protected by the Tor network.</p>
+<p>At this time the Tor Project is redesigning Tor hidden services to have more powerful security and anonymity guarantees; <a href="https://blog.torproject.org/blog/hidden-services-need-some-love">Tor hidden services need some love</a>.
+Endeavors using Tahoe-LAFS onion grids will benefit from these future design changes to Tor Hidden Services.</p>
+<h4>use Ansible to configure an onion grid storage server</h4>
+<p><strong>note:</strong> this procedure is written for use with Tails but
+could easily be applied to other operating systems</p>
+<p><strong>1. setup basic Ansible working directory hierarchy</strong></p>
+<div class="highlight"><pre>mkdir -p /home/amnesia/Persistent/projects/ansible-base/roles
+mkdir -p /home/amnesia/Persistent/projects/ansible-base/host_vars
+<span class="nb">cd</span> ~/Persistent/projects/ansible-base/roles
+git clone git+https://github.com/david415/ansible-tahoe-lafs.git
+git clone git+https://github.com/david415/ansible-tor.git
+<span class="nb">cd</span> ..
+</pre></div>
+
+
+<p><strong>2. install Ansible in a python virtual env</strong></p>
+<p>Get the latest stable python virtualenv and cryptographically verify it.
+save it to: <strong>~/Persistent/virtualenv-x.xx.x/</strong></p>
+<p>Then create a virtual env to run ansible:</p>
+<div class="highlight"><pre>~/Persistent/virtualenv-x.xx.x/virtualenv.py --system-site-packages Persistent/virtenv-ansible
+New python executable in Persistent/virtenv-ansible/bin/python
+Installing setuptools, pip...done.
+amnesia@amnesia:~<span class="err">$</span>
+</pre></div>
+
+
+<p>Activate the virtual env and install ansible and dependencies:</p>
+<div class="highlight"><pre>. ~/Persistent/virtenv-ansible/bin/activate
+sudo apt-get install build-essential python-dev
+pip install ecdsa markupsafe paramiko PyYAML Jinja2 httplib2
+pip install ansible
+</pre></div>
+
+
+<p>Place these two Ansible roles for Tor and Tahoe-LAFS in the roles directory:</p>
+<div class="highlight"><pre><span class="nb">cd</span> /home/amnesia/Persistent/projects/ansible-base/roles
+git clone https://github.com/david415/ansible-tahoe-lafs.git
+git clone https://github.com/david415/ansible-tor.git
+</pre></div>
+
+
+<p><strong>3. use Ansible to configure an introducer and storage node on one machine</strong></p>
+<p>Configure a playbook for :</p>
+<div class="highlight"><pre>cp roles/ansible-tahoe-lafs/playbook-examples/oniongrid_introducer_storage.yml .
+</pre></div>
+
+
+<p>You should edit this <strong>oniongrid_introducer_storage.yml</strong> playbook because it makes some assumptions for instance:</p>
+<ul>
+<li>you want your introducer name name set to "IntroducerNode"</li>
+<li>TCP port numbers are set to arbitary values which you may want to change</li>
+<li>this playbook assumes you are using Tails and want the introducer inventory stored in <strong>/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers</strong></li>
+<li>this playbook assumes your remote ssh user is "human" and has a home directory in "/home/human"</li>
+</ul>
+<div class="highlight"><pre><span class="nn">---</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">hosts</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">onion-introducer-storage</span>
+  <span class="l-Scalar-Plain">vars</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">hidden_services_parent_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;/var/lib/tor/services&quot;</span>
+    <span class="l-Scalar-Plain">introducer_node_name</span><span class="p-Indicator">:</span> <span class="s">&quot;IntroducerNode&quot;</span>
+    <span class="l-Scalar-Plain">introducer_tub_port</span><span class="p-Indicator">:</span> <span class="s">&quot;33000&quot;</span>
+    <span class="l-Scalar-Plain">introducer_web_port</span><span class="p-Indicator">:</span> <span class="s">&quot;33001&quot;</span>
+    <span class="l-Scalar-Plain">storage_service_name</span><span class="p-Indicator">:</span> <span class="s">&quot;storage&quot;</span>
+    <span class="l-Scalar-Plain">storage_tub_port</span><span class="p-Indicator">:</span> <span class="s">&quot;34000&quot;</span>
+    <span class="l-Scalar-Plain">storage_web_port</span><span class="p-Indicator">:</span> <span class="s">&quot;34001&quot;</span>
+    <span class="l-Scalar-Plain">hidden_services</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span>
+      <span class="p-Indicator">{</span> <span class="nv">dir</span><span class="p-Indicator">:</span> <span class="s">&quot;intro-web&quot;</span><span class="p-Indicator">,</span> <span class="nv">ports</span><span class="p-Indicator">:</span> <span class="p-Indicator">[{</span> <span class="nv">virtport</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">introducer_web_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span> <span class="nv">target</span><span class="p-Indicator">:</span> <span class="s">&quot;127.0.0.1:{{</span><span class="nv"> </span><span class="s">introducer_web_port</span><span class="nv"> </span><span class="s">}}&quot;</span> <span class="p-Indicator">}]</span> <span class="p-Indicator">},</span>
+      <span class="p-Indicator">{</span> <span class="nv">dir</span><span class="p-Indicator">:</span> <span class="s">&quot;introducer&quot;</span><span class="p-Indicator">,</span> <span class="nv">ports</span><span class="p-Indicator">:</span> <span class="p-Indicator">[{</span> <span class="nv">virtport</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">introducer_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span> <span class="nv">target</span><span class="p-Indicator">:</span> <span class="s">&quot;127.0.0.1:{{</span><span class="nv"> </span><span class="s">introducer_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span> <span class="p-Indicator">}]</span> <span class="p-Indicator">},</span>
+      <span class="p-Indicator">{</span> <span class="nv">dir</span><span class="p-Indicator">:</span> <span class="s">&quot;storage-web&quot;</span><span class="p-Indicator">,</span> <span class="nv">ports</span><span class="p-Indicator">:</span> <span class="p-Indicator">[{</span> <span class="nv">virtport</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">storage_web_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span> <span class="nv">target</span><span class="p-Indicator">:</span> <span class="s">&quot;127.0.0.1:{{</span><span class="nv"> </span><span class="s">storage_web_port</span><span class="nv"> </span><span class="s">}}&quot;</span> <span class="p-Indicator">}]</span> <span class="p-Indicator">},</span>
+      <span class="p-Indicator">{</span> <span class="nv">dir</span><span class="p-Indicator">:</span> <span class="s">&quot;storage&quot;</span><span class="p-Indicator">,</span> <span class="nv">ports</span><span class="p-Indicator">:</span> <span class="p-Indicator">[{</span> <span class="nv">virtport</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">storage_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span> <span class="nv">target</span><span class="p-Indicator">:</span> <span class="s">&quot;127.0.0.1:{{</span><span class="nv"> </span><span class="s">storage_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span> <span class="p-Indicator">}]</span> <span class="p-Indicator">},</span>
+    <span class="p-Indicator">]</span>
+  <span class="l-Scalar-Plain">roles</span><span class="p-Indicator">:</span>
+    <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">role</span><span class="p-Indicator">:</span> <span class="nv">ansible-tor</span><span class="p-Indicator">,</span>
+        <span class="nv">tor_wait_for_hidden_services</span><span class="p-Indicator">:</span> <span class="nv">yes</span><span class="p-Indicator">,</span>
+        <span class="nv">tor_distribution_release</span><span class="p-Indicator">:</span> <span class="s">&quot;wheezy&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tor_ExitPolicy</span><span class="p-Indicator">:</span> <span class="s">&quot;reject</span><span class="nv"> </span><span class="s">*:*&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tor_hidden_services</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">hidden_services</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tor_hidden_services_parent_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">hidden_services_parent_dir</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">sudo</span><span class="p-Indicator">:</span> <span class="nv">yes</span>
+      <span class="p-Indicator">}</span>
+    <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">role</span><span class="p-Indicator">:</span> <span class="nv">ansible-tahoe-lafs</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_introducer</span><span class="p-Indicator">:</span> <span class="nv">yes</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_local_introducers_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">use_torsocks</span><span class="p-Indicator">:</span> <span class="nv">yes</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_hidden_service_name</span><span class="p-Indicator">:</span> <span class="s">&quot;introducer&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tor_hidden_services_parent_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">hidden_services_parent_dir</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_introducer_port</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">introducer_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_web_port</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">introducer_web_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_tub_port</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">introducer_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_shares_needed</span><span class="p-Indicator">:</span> <span class="nv">2</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_shares_happy</span><span class="p-Indicator">:</span> <span class="nv">3</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_shares_total</span><span class="p-Indicator">:</span> <span class="nv">4</span><span class="p-Indicator">,</span>
+        <span class="nv">backports_url</span><span class="p-Indicator">:</span> <span class="s">&quot;http://ftp.de.debian.org/debian/&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">backports_distribution_release</span><span class="p-Indicator">:</span> <span class="s">&quot;wheezy-backports&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_source_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;/home/human/tahoe-lafs-src&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_run_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;/home/human/tahoe_introducer&quot;</span>
+      <span class="p-Indicator">}</span>
+    <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">role</span><span class="p-Indicator">:</span> <span class="nv">ansible-tahoe-lafs</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_local_introducers_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_storage_enabled</span><span class="p-Indicator">:</span> <span class="s">&quot;true&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_hidden_service_name</span><span class="p-Indicator">:</span> <span class="s">&quot;storage&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tor_hidden_services_parent_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">hidden_services_parent_dir</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_web_port</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">storage_web_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_tub_port</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">storage_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_shares_needed</span><span class="p-Indicator">:</span> <span class="nv">2</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_shares_happy</span><span class="p-Indicator">:</span> <span class="nv">3</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_shares_total</span><span class="p-Indicator">:</span> <span class="nv">4</span><span class="p-Indicator">,</span>
+        <span class="nv">backports_url</span><span class="p-Indicator">:</span> <span class="s">&quot;http://ftp.de.debian.org/debian/&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">backports_distribution_release</span><span class="p-Indicator">:</span> <span class="s">&quot;wheezy-backports&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_source_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;/home/human/tahoe-lafs-src&quot;</span><span class="p-Indicator">,</span>
+        <span class="nv">tahoe_run_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;/home/human/tahoe_storage&quot;</span>
+      <span class="p-Indicator">}</span>
+</pre></div>
+
+
+<p>If say for instance you've got an Ansible inventory file called <strong>master-host-inventory</strong>
+it could look like this:</p>
+<div class="highlight"><pre><span class="k">[onion-introducer-storage]</span>
+<span class="na">zzz.zzz.zzz.zzz tahoe_nickname</span><span class="o">=</span><span class="s">RobotSmashPunyHumans</span>
+</pre></div>
+
+
+<p>The beginning of this playbook specifies the <strong>onion-introducer-storage</strong> host group.
+Run the playbook like this:</p>
+<div class="highlight"><pre>ansible-playbook -i master-host-inventory oniongrid-storage-nodes.yml -u human
+</pre></div>
+
+
+<p>If all goes well your new introducer FURL should be placed locally in this file:
+<strong>/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers</strong></p>
+<p><strong>4. use Ansible to configure the other storage nodes in your grid</strong></p>
+<p><strong>note:</strong> this step requires you to have a Tahoe-LAFS introducer FURL... perhaps generated from the previous step</p>
+<p>Firstly, if you've skipped the previous step you'll need to create an Ansible inventory file, e.g. at this location:
+<strong>/home/amnesia/Persistent/projects/ansible-base/master-host-inventory</strong></p>
+<p>Use Ansible to configure one or more storage servers where we specify the Tahoe nickname like this:</p>
+<div class="highlight"><pre><span class="k">[onion-storage]</span>
+<span class="na">xxx.xxx.xxx.xxx tahoe_nickname</span><span class="o">=</span><span class="s">RobotOnlyStorageNode</span>
+<span class="na">yyy.yyy.yyy.yyy tahoe_nickname</span><span class="o">=</span><span class="s">RobotsAgainstHumans</span>
+</pre></div>
+
+
+<p>Configure a playbook for your Onion grid storage servers:</p>
+<div class="highlight"><pre>cp roles/ansible-tahoe-lafs/playbook-examples/oniongrid-storage-nodes.yml .
+</pre></div>
+
+
+<p>You must edit <strong>oniongrid-storage-nodes.yml</strong>, it needs to contain appropriate settings such as the introducer FURL for your onion grid:</p>
+<div class="highlight"><pre><span class="nn">---</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">hosts</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">onion-storage</span>
+<span class="l-Scalar-Plain">vars</span><span class="p-Indicator">:</span>
+<span class="l-Scalar-Plain">oniongrid_introducer_furl</span><span class="p-Indicator">:</span> <span class="s">&quot;pb://iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii@bbbbbbbbbbbbbbbb.onion:37483/swisssssss&quot;</span>
+<span class="l-Scalar-Plain">oniongrid_hidden_service_name</span><span class="p-Indicator">:</span> <span class="s">&quot;tahoe-storage&quot;</span>
+<span class="l-Scalar-Plain">oniongrid_tub_port</span><span class="p-Indicator">:</span> <span class="s">&quot;37493&quot;</span>
+<span class="l-Scalar-Plain">oniongrid_web_port</span><span class="p-Indicator">:</span> <span class="s">&quot;3456&quot;</span>
+<span class="l-Scalar-Plain">oniongrid_hidden_services_parent_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;/var/lib/tor/services&quot;</span>
+<span class="l-Scalar-Plain">oniongrid_hidden_services</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span>
+<span class="p-Indicator">{</span> <span class="nv">dir</span><span class="p-Indicator">:</span> <span class="s">&quot;tahoe-web&quot;</span><span class="p-Indicator">,</span> <span class="nv">ports</span><span class="p-Indicator">:</span> <span class="p-Indicator">[{</span> <span class="nv">virtport</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">oniongrid_web_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span> <span class="nv">target</span><span class="p-Indicator">:</span> <span class="s">&quot;127.0.0.1:{{</span><span class="nv"> </span><span class="s">oniongrid_web_port</span><span class="nv"> </span><span class="s">}}&quot;</span> <span class="p-Indicator">}]</span> <span class="p-Indicator">},</span>
+<span class="p-Indicator">{</span> <span class="nv">dir</span><span class="p-Indicator">:</span> <span class="s">&quot;tahoe-storage&quot;</span><span class="p-Indicator">,</span> <span class="nv">ports</span><span class="p-Indicator">:</span> <span class="p-Indicator">[{</span> <span class="nv">virtport</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">oniongrid_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span> <span class="nv">target</span><span class="p-Indicator">:</span> <span class="s">&quot;127.0.0.1:{{</span><span class="nv"> </span><span class="s">oniongrid_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span> <span class="p-Indicator">}]</span> <span class="p-Indicator">},</span>
+<span class="p-Indicator">]</span>
+<span class="l-Scalar-Plain">roles</span><span class="p-Indicator">:</span>
+<span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">role</span><span class="p-Indicator">:</span> <span class="nv">ansible-tor</span><span class="p-Indicator">,</span>
+<span class="nv">tor_wait_for_hidden_services</span><span class="p-Indicator">:</span> <span class="nv">yes</span><span class="p-Indicator">,</span>
+<span class="nv">tor_distribution_release</span><span class="p-Indicator">:</span> <span class="s">&quot;wheezy&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tor_ExitPolicy</span><span class="p-Indicator">:</span> <span class="s">&quot;reject</span><span class="nv"> </span><span class="s">*:*&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tor_hidden_services</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">oniongrid_hidden_services</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tor_hidden_services_parent_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">oniongrid_hidden_services_parent_dir</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">sudo</span><span class="p-Indicator">:</span> <span class="nv">yes</span>
+<span class="p-Indicator">}</span>
+<span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">role</span><span class="p-Indicator">:</span> <span class="nv">ansible-tahoe-lafs</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_introducer_furl</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">oniongrid_introducer_furl</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_storage_enabled</span><span class="p-Indicator">:</span> <span class="s">&quot;true&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_hidden_service_name</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">oniongrid_hidden_service_name</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tor_hidden_services_parent_dir</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">oniongrid_hidden_services_parent_dir</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_web_port</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">oniongrid_web_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_tub_port</span><span class="p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">oniongrid_tub_port</span><span class="nv"> </span><span class="s">}}&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_shares_needed</span><span class="p-Indicator">:</span> <span class="nv">2</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_shares_happy</span><span class="p-Indicator">:</span> <span class="nv">3</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_shares_total</span><span class="p-Indicator">:</span> <span class="nv">4</span><span class="p-Indicator">,</span>
+<span class="nv">backports_url</span><span class="p-Indicator">:</span> <span class="s">&quot;http://ftp.de.debian.org/debian/&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">backports_distribution_release</span><span class="p-Indicator">:</span> <span class="s">&quot;wheezy-backports&quot;</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_source_dir</span><span class="p-Indicator">:</span> <span class="nv">/home/human/tahoe-lafs-src</span><span class="p-Indicator">,</span>
+<span class="nv">tahoe_run_dir</span><span class="p-Indicator">:</span> <span class="nv">/home/human/tahoe_client</span>
+<span class="p-Indicator">}</span>
+</pre></div>
+
+
+<p>Configure your server(s)... <strong>Run the playbook:</strong></p>
+<div class="highlight"><pre>ansible-playbook -i onion-storage-inventory oniongrid-storage-nodes.yml -u human
+</pre></div>                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="/data-less-travel-opsec.html" rel="bookmark"
+                           title="Permalink to "data-less" travel opsec">"data-less" travel opsec</a></h1>
+                </header>
+
+                <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2014-08-11T16:00:00">
                 Published: Mon 11 August 2014
@@ -31,93 +252,10 @@
         </address>
 <p>In <a href="/category/tails-tahoe-lafs.html">Tails, Tahoe-LAFS</a>. </p>
 <p>tags: <a href="/tag/tails.html">Tails</a> <a href="/tag/tahoe-lafs.html">Tahoe-LAFS</a> <a href="/tag/tor-hidden-services.html">Tor hidden services</a> <a href="/tag/tor.html">Tor</a> </p>
-</footer><!-- /.post-info --><h3>Operational security practices for international travel</h3>
-<p>aka</p>
-<h3>Secure Covert Backup Strategy for Tails using Tahoe-LAFS</h3>
-<p><strong>note:</strong> Tails is a good choice but this could be applied to other operating systems/Linux distros.
-In some ways this article is a continuation of <a href="https://david415.github.io/simple-tails-backup-procedure-with-tahoe-lafs.html">Simple Tails Backup procedure with Tahoe-LAFS</a></p>
-<h4>context</h4>
-<p>When traveling in surveilance states where there is risk of search of seizure... <strong>you do not want to be in posession of ciphertext, key material or other sensitive data</strong>. If you are detained and have ciphertext they can request you for the phassphrase to decrypt your data. Things may not go so well for you if you don't comply with their demands.</p>
-<p>To fulfill this objective of not carrying sensitive data we can choose to either carry benign data like
-a Tails disk with no Persistent volume... or no data at all. This means either "secure erasing" your drive(s).
-Perhaps some people will opt to not carry any drives at all. 
-Of course carrying no drives at all would mean that in the future you'll have to acquire an operating system
-and a drive to put it on... like Tails on a USB disk for instance.</p>
-<p>To meet this goal of not carrying any critical data we need to reduce the complexity of 
-restoring our confidential backup to two pieces of information
-that can be remembered (and should not be written down):</p>
-<ol>
-<li>passphrase to unlock critical blob</li>
-<li>retreival information of critical blob</li>
-</ol>
-<p>Once you've setup several redundant hiding places for your critical ciphertext blob of Tahoe-LAFS information then you
-"secure erase" your drive(s) before traveling.</p>
-<h4>Create your critical ciphertext blob like this:</h4>
-<p>This critical blob contains Tahoe-LAFS cryptographic capabilities and grid connection information.
-That is... everything we need to restore all our sensitive data; key material and configuration files in my case.
-It's a total loss if an attacker gains access to our Tahoe-LAFS cryptographic capabilities.
-We therefore protect this data by symmetrically encrypting with an entropic passphrase.</p>
-<p>Create a textfile containing Tahoe-LAFS onion grid connection information and root cryptographic capability:</p>
-<div class="highlight"><pre>cat <span class="s">&lt;&lt;EOT&gt;critical</span>
-<span class="s">export introducer_furl=&#39;pb://MyTubID@MyOnionAddress.onion:OnionPort/SuperSecretSwissnum&#39;</span>
-<span class="s">root_cap=&#39;URI:DIR2:aaaaaaaaabcaaaaaaaaaaaaaaa:kkkkkkkkkkkkkkfghkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk&#39;</span>
-<span class="s">[client-server-selection]</span>
-<span class="s">server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.type = tahoe-foolscap</span>
-<span class="s">server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.nickname = RobotKillHuman</span>
-<span class="s">server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.seed = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</span>
-<span class="s">server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.furl = pb://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@cccccccccccccccc.onion:34273/cswisssssssssssssssssssssssssnum</span>
-<span class="s">server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.type = tahoe-foolscap</span>
-<span class="s">server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.nickname = RobotPlanetConspiracy</span>
-<span class="s">server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.seed = bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb</span>
-<span class="s">server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.furl = pb://bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb@dddddddddddddddd.onion:34273/bswisssssssssssssssssssssssssnum</span>
-<span class="s">server.v0-cccccccccccccccccccccccccccccccc.type = tahoe-foolscap</span>
-<span class="s">server.v0-cccccccccccccccccccccccccccccccc.nickname = StorageForRobotsOnly</span>
-<span class="s">server.v0-cccccccccccccccccccccccccccccccc.seed = cccccccccccccccccccccccccccccccc</span>
-<span class="s">server.v0-cccccccccccccccccccccccccccccccc.furl = pb://ccccccccccccccccccccccccccccccc@eeeeeeeeeeeeeeee.onion:34273/aswissssssssssssssssssssssssssnum</span>
-<span class="s">EOT</span>
-</pre></div>
-
-
-<p>Unfortunately we have not yet merged Leif Ryge's <a href="https://github.com/leif/tahoe-lafs/tree/truckee">truckee feature branch</a> of Tahoe-LAFS upstream.
-Use this truckee so that you have my <strong>introducer-less</strong> feature which allows you to specify storage node connection information
-directly in your <strong>tahoe.cfg</strong>... thus eliminating the introducer node as the single point of failure and success.</p>
-<p>Currently I use DJB's NaCl SecretBox to verifiably encrypt/decrypt the critical connection
-information and root cap like this:
-<a href="https://github.com/david415/hidden-tahoe-backup/blob/master/HiddenTahoeBackup/secretBox.py">secretBox.py</a></p>
-<div class="highlight"><pre>./secretBox.py --encrypt critical &gt; critical.secretbox
-</pre></div>
-
-
-<p>Make sure to pick a long entropic passphrase with enough interesting words.</p>
-<h4>What does retrieval information of critical blob mean?</h4>
-<p>Your threat model may permit you to publicly stash your critical blob
-in a memorable location such as:</p>
-<ul>
-<li>on a gist or github repo</li>
-<li>in a tweet</li>
-<li>in a blog post</li>
-<li>web host at memorable url</li>
-</ul>
-<p>On the other hand your threat model may advise against exposing your critical blob to cryptanalysis...
-You might prefer more covert methods of recovery:</p>
-<ul>
-<li>use ssh to retreive the file from a private shell account</li>
-<li>Pond message a friend; retreive from friend directly</li>
-<li>PGP e-mail a friend; retreive from friend directly</li>
-</ul>
-<h3>Restore procedure:</h3>
-<ol>
-<li>acquire Tails disk</li>
-<li>acquire critical ciphertext blob</li>
-<li>decrypt ciphertext blob</li>
-<li>configure Tahoe-LAFS client</li>
-<li>download all your private data</li>
-</ol>                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
+</footer><!-- /.post-info -->                <p>opsec for high risk travel</p>
+                <a class="readmore" href="/data-less-travel-opsec.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
 
             <li><article class="hentry">
                 <header>
