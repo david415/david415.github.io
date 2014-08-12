@@ -76,10 +76,20 @@ You might prefer more covert methods of recovery:&lt;/p&gt;
 &lt;li&gt;configure Tahoe-LAFS client&lt;/li&gt;
 &lt;li&gt;download all your private data&lt;/li&gt;
 &lt;/ol&gt;</summary><category term="Tails"></category><category term="Tahoe-LAFS"></category><category term="Tor hidden services"></category><category term="Tor"></category></entry><entry><title>simple Tails backup procedure with Tahoe-LAFS</title><link href="/simple-tails-backup-procedure-with-tahoe-lafs.html" rel="alternate"></link><updated>2014-08-11T13:00:00+02:00</updated><author><name>David Stainton</name></author><id>tag:,2014-08-11:simple-tails-backup-procedure-with-tahoe-lafs.html</id><summary type="html">&lt;h4&gt;securely backup your &lt;a href="https://tails.boum.org/doc/first_steps/persistence/index.en.html"&gt;Tails persistent volume&lt;/a&gt; using Tahoe-LAFS over Tor&lt;/h4&gt;
+&lt;p&gt;This HOWTO requires you to have access to a &lt;strong&gt;Tahoe-LAFS storage grid&lt;/strong&gt;.
+You have 2 choices:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;build your own Tahoe-LAFS storage grid&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;purchase Tahoe-LAFS storage grid access from &lt;a href="https://leastauthority.com/"&gt;LeastAuthority&lt;/a&gt; or other companies&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h3&gt;why Tahoe-LAFS?&lt;/h3&gt;
 &lt;p&gt;Do you backup your personal data?&lt;/p&gt;
-&lt;p&gt;Using Dropbox, AWS storage or Google Drive to backup data is a shameful act...
-but we have a choice! We can choose to use verified end to end crypto... and join the &lt;a href="http://www.activism.net/cypherpunk/manifesto.html"&gt;cypherpunks movement&lt;/a&gt;.
+&lt;p&gt;Using Dropbox, AWS storage or Google Drive to backup data doesn't give users control over the confidentiality of their data.
+But we have a choice! We can choose to use verified end to end crypto (read the &lt;a href="http://www.activism.net/cypherpunk/manifesto.html"&gt;cypherpunks manifesto&lt;/a&gt;).
 When you use Tahoe-LAFS you are choosing to be in control of the verifiability, confidentiality and erasure encoding or your data.&lt;/p&gt;
 &lt;p&gt;Tahoe-LAFS storage servers only see ciphertext blobs... additionally the Tahoe-LAFS cryptographic "capabilities model"
 is essentially a distributed access control system. The storage servers do not authorize access to data; instead the possessor
