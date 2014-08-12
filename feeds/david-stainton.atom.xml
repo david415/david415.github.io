@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>code sabbatical</title><link href="/" rel="alternate"></link><link href="/feeds/david-stainton.atom.xml" rel="self"></link><id>/</id><updated>2014-08-12T13:00:00+02:00</updated><entry><title>create a Tahoe-LAFS onion grid</title><link href="/create-a-tahoe-lafs-onion-grid.html" rel="alternate"></link><updated>2014-08-12T13:00:00+02:00</updated><author><name>David Stainton</name></author><id>tag:,2014-08-12:create-a-tahoe-lafs-onion-grid.html</id><summary type="html">&lt;h3&gt;how to create a Tahoe-LAFS onion grid&lt;/h3&gt;
-&lt;p&gt;I think a workshop for creating a collective onion grid would be a great
+<feed xmlns="http://www.w3.org/2005/Atom"><title>code sabbatical</title><link href="/" rel="alternate"></link><link href="/feeds/david-stainton.atom.xml" rel="self"></link><id>/</id><updated>2014-08-12T13:00:00+02:00</updated><entry><title>create a Tahoe-LAFS onion grid</title><link href="/create-a-tahoe-lafs-onion-grid.html" rel="alternate"></link><updated>2014-08-12T13:00:00+02:00</updated><author><name>David Stainton</name></author><id>tag:,2014-08-12:create-a-tahoe-lafs-onion-grid.html</id><summary type="html">&lt;p&gt;I think a workshop for creating a collective onion grid would be a great
 activity for hackerspaces and cryptoparties. It will allow participants to
 securely backup and share files. Each participant configures
 one or more storage servers. The idea is that all the storage servers
@@ -148,7 +147,7 @@ Run the playbook like this:&lt;/p&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;Configure a playbook for your Onion grid storage servers:&lt;/p&gt;
+&lt;p&gt;Configure a playbook for your onion grid storage servers:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;cp roles/ansible-tahoe-lafs/playbook-examples/oniongrid-storage-nodes.yml .
 &lt;/pre&gt;&lt;/div&gt;
 
