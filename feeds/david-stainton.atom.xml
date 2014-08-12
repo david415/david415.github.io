@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>code sabbatical</title><link href="/" rel="alternate"></link><link href="/feeds/david-stainton.atom.xml" rel="self"></link><id>/</id><updated>2014-08-11T13:00:00+02:00</updated><entry><title>simple Tails backup procedure with Tahoe-LAFS</title><link href="/simple-tails-backup-procedure-with-tahoe-lafs.html" rel="alternate"></link><updated>2014-08-11T13:00:00+02:00</updated><author><name>David Stainton</name></author><id>tag:,2014-08-11:simple-tails-backup-procedure-with-tahoe-lafs.html</id><summary type="html">&lt;h4&gt;requirements:&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;Tails 1.1 or higher&lt;/li&gt;
+&lt;li&gt;connecting information to a Tahoe-LAFS grid:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A Tahoe-LAFS introducer FURL take this form:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nl"&gt;pb:&lt;/span&gt;&lt;span class="c1"&gt;//TubID@MyOnion:OnionPort/swissnum&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;...and looks like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nl"&gt;pb:&lt;/span&gt;&lt;span class="c1"&gt;//dsagndsgmndsg6dgnqtug983nfmsdh8g@dfd2jdhfgfh8shdf.onion:33000/agkhdags7gdslgshhsg98gsndsag8fdn&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;procedure :&lt;/h3&gt;
+&lt;h3&gt;step 0: Install Tahoe-LAFS and create your configuration&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo apt-get install tahoe-lafs
+tahoe client-create ~/Persistent/.tahoe
+ln -s ~/Persistent/.tahoe ~/.tahoe
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;replace ~/Persistent/.tahoe/tahoe.cfg with a config file like this:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;[node]&lt;/span&gt;
+&lt;span class="na"&gt;nickname&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;client&lt;/span&gt;
+&lt;span class="na"&gt;web.reveal_storage_furls&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+&lt;span class="na"&gt;web.port&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;tcp:7657:interface=127.0.0.1&lt;/span&gt;
+&lt;span class="na"&gt;web.static&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;public_html&lt;/span&gt;
+&lt;span class="na"&gt;tub.location&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;client.fakelocation:1&lt;/span&gt;
+&lt;span class="k"&gt;[client]&lt;/span&gt;
+&lt;span class="na"&gt;introducer.furl&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;pb://MyTubID@myHiddenService.onion:HiddenPort/introducer&lt;/span&gt;
+&lt;span class="na"&gt;shares.needed&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;3&lt;/span&gt;
+&lt;span class="na"&gt;shares.happy&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;5&lt;/span&gt;
+&lt;span class="na"&gt;shares.total&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;5&lt;/span&gt;
+&lt;span class="k"&gt;[storage]&lt;/span&gt;
+&lt;span class="na"&gt;enabled&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;false&lt;/span&gt;
+&lt;span class="k"&gt;[helper]&lt;/span&gt;
+&lt;span class="na"&gt;enabled&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;false&lt;/span&gt;
+&lt;span class="k"&gt;[drop_upload]&lt;/span&gt;
+&lt;span class="na"&gt;enabled&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;false&lt;/span&gt;
+&lt;span class="k"&gt;[client-server-selection]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;NOTE: you'll want to adjust the shares.needed/happy/total appropriately for your grid!&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE: You absolutely must use the "tub.location" option otherwise
+Tahoe-LAFS will attempt to deanonymize your IP to the Introducer node.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE: Take notice that the web.port is set to "tcp:7657:interface=127.0.0.1"
+This is set like this because the Tails I2P ferm firewall configuration and
+foxyproxy configurations allow the browser to retreive this url:&lt;/strong&gt;
+http://127.0.0.1:7657/&lt;/p&gt;
+&lt;h3&gt;step 1:  start your Tahoe-LAFS client&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;usewithtor tahoe start
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;the tahoe node directory defaults to ~/.tahoe...
+so you must either setup a symlink or
+you can specify the tahoe node directory in the tahoe command:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;usewithtor&lt;/span&gt; &lt;span class="n"&gt;tahoe&lt;/span&gt; &lt;span class="n"&gt;start&lt;/span&gt; &lt;span class="n"&gt;elsewhere&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;tahoe&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;step 2:  use tahoe&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;create a backup alias&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;tahoe&lt;/span&gt; &lt;span class="n"&gt;create&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;alias&lt;/span&gt; &lt;span class="n"&gt;tails_backup&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;perform backups!&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Perform the backup using the "tails_backup" alias like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;tahoe backup --verbose ~/.ssh tails_backup:dotssh
+tahoe backup --verbose ~/.gnupg tails_backup:dotgnupg
+tahoe backup --verbose ~/Persistent tails_backup:Persistent
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;I ammend the last command to exclude some files like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;tahoe backup --verbose --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;ansible-tahoe-base*&amp;#39;&lt;/span&gt; --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;incidents*&amp;#39;&lt;/span&gt; --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;twistd.log&amp;#39;&lt;/span&gt; --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;projects*&amp;#39;&lt;/span&gt; --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;tahoe-lafs*&amp;#39;&lt;/span&gt; --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Music*&amp;#39;&lt;/span&gt; --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;virtenv-*&amp;#39;&lt;/span&gt; --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;virtualenv-*&amp;#39;&lt;/span&gt; --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;go*&amp;#39;&lt;/span&gt; --exclude&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;*.iso&amp;#39;&lt;/span&gt; ~/Persistent tails_backup:Persistent
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;step 3: restore data&lt;/h3&gt;
+&lt;p&gt;Generally you can restore your data like this from the latest snapshots:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;tahoe cp --verbose -r tails_backup:dotssh/Latest ~/.ssh
+tahoe cp --verbose -r tails_backup:dotgnupg/Latest ~/.gnupg
+tahoe cp --verbose -r tails_backup:Persistent/Latest ~/Persistent
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Or you might want to restore from an old snapshot in the archives:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;tahoe cp --verbose -r tails_backup:Persistent/Archives/2014-07-27_12:11:41Z ~/Persistent
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Of course to restore data from a total system data loss you will have to have
+an accessible backup of either your Tahoe-LAFS nodeDir (e.g. ~/.tahoe) or
+the Introducer FURL and any Tahoe capability aliases you used to store data on.&lt;/p&gt;
+&lt;p&gt;I've got an operational security procedure designed around encapsulating this
+data in a tiny symmetrically encrypted blob that I then hide right before I
+wipe my drives in preparation to get on an airplane; thus temporarily locking
+myself out of all infrastructure and private key materials in case of
+search and seizure. Here's my attempt to automate much of this procedure:&lt;/p&gt;
+&lt;p&gt;https://github.com/david415/hidden-tahoe-backup&lt;/p&gt;
+&lt;h3&gt;Appendix A: Renew leases and Repair Tahoe-LAFS data&lt;/h3&gt;
+&lt;p&gt;In the future after performing backups... if you want to be extra safe before a restore situation arises then
+it would be advisable to perform a repair on the data:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;tahoe deep-check --repair --add-lease --verbose tails_backup:dotssh
+tahoe deep-check --repair --add-lease --verbose tails_backup:dotgnupg
+tahoe deep-check --repair --add-lease --verbose tails_backup:Persistent
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;or perhaps you only care about repairing the latest snapshot:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;tahoe deep-check --repair --add-lease --verbose tails_backup:dotssh/Latest
+tahoe deep-check --repair --add-lease --verbose tails_backup:dotgnupg/Latest
+tahoe deep-check --repair --add-lease --verbose tails_backup:Persistent/Latest
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Appendix B: additional considerations for Tails users&lt;/h3&gt;
+&lt;p&gt;You'll probably want to setup a dotfiles symlink for your .tahoe directory:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;amnesia@amnesia:/live/persistence/TailsData_unlocked/dotfiles&lt;span class="nv"&gt;$ &lt;/span&gt;ln -s ~/Persistent/.tahoe
+amnesia@amnesia:/live/persistence/TailsData_unlocked/dotfiles&lt;span class="nv"&gt;$ &lt;/span&gt;ls -la .tahoe
+lrwxrwxrwx 1 amnesia amnesia 31 Aug 12 01:32 .tahoe -&amp;gt; /home/amnesia/Persistent/.tahoe
+amnesia@amnesia:/live/persistence/TailsData_unlocked/dotfiles&lt;span class="nv"&gt;$ &lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;As root add "tahoe-lafs" to /live/persistence/TailsData_unlocked/live-additional-software.conf so that your persistent volume will store
+a copy of the Tahoe-LAFS package which gets installed upon bootup.&lt;/p&gt;</summary><category term="Tails"></category><category term="Tahoe-LAFS"></category><category term="Tor hidden services"></category><category term="Tor"></category></entry></feed>
