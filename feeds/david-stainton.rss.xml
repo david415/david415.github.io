@@ -1,5 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>code sabbatical</title><link>/</link><description></description><atom:link href="/feeds/david-stainton.rss.xml" rel="self"></atom:link><lastBuildDate>Mon, 11 Aug 2014 13:00:00 +0200</lastBuildDate><item><title>simple Tails backup procedure with Tahoe-LAFS</title><link>/simple-tails-backup-procedure-with-tahoe-lafs.html</link><description>&lt;h4&gt;securely backup your &lt;a href="https://tails.boum.org/doc/first_steps/persistence/index.en.html"&gt;Tails persistent volume&lt;/a&gt; using Tahoe-LAFS over Tor&lt;/h4&gt;
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>code sabbatical</title><link>/</link><description></description><atom:link href="/feeds/david-stainton.rss.xml" rel="self"></atom:link><lastBuildDate>Mon, 11 Aug 2014 16:00:00 +0200</lastBuildDate><item><title>"data-less" travel opsec</title><link>/data-less-travel-opsec.html</link><description>&lt;h3&gt;Operational security practices for international travel&lt;/h3&gt;
+&lt;p&gt;aka&lt;/p&gt;
+&lt;h3&gt;Secure Covert Backup Strategy for Tails using Tahoe-LAFS&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;note:&lt;/strong&gt; You may want to first read &lt;a href="https://david415.github.io/simple-tails-backup-procedure-with-tahoe-lafs.html"&gt;Simple Tails Backup procedure with Tahoe-LAFS&lt;/a&gt;
+if you are not yet familiar with Tahoe-LAFS&lt;/p&gt;
+&lt;h4&gt;context&lt;/h4&gt;
+&lt;p&gt;When traveling in surveilance states where there is risk of search of seizure... &lt;strong&gt;you do not want to be in posession of ciphertext, key material or other sensitive data&lt;/strong&gt;. If you are detained and have ciphertext they can request you for the phassphrase to decrypt your data. Things may not go so well for you if you don't comply with their demands.&lt;/p&gt;
+&lt;p&gt;To fulfill this objective we can reduce the complexity of 
+restoring our confidential backup to two pieces of information
+that can be remembered (and should not be written down):&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;passphrase to unlock critical blob&lt;/li&gt;
+&lt;li&gt;retreival information of critical blob&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Once you've setup several redundant hiding places for your critical ciphertext blob of Tahoe-LAFS information then you
+"secure erase" your drive(s) before traveling.&lt;/p&gt;
+&lt;h4&gt;Create your critical ciphertext blob like this:&lt;/h4&gt;
+&lt;p&gt;This critical blob contains Tahoe-LAFS cryptographic capabilities and grid connection information.
+That is... everything we need to restore all our sensitive data; key material and configuration files in my case.
+It's a total loss if an attacker gains access to our Tahoe-LAFS cryptographic capabilities.
+We therefore protect this data by symmetrically encrypting with an entropic passphrase.&lt;/p&gt;
+&lt;p&gt;Create a textfile containing Tahoe-LAFS onion grid connection information and root cryptographic capability:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cat &lt;span class="s"&gt;&amp;lt;&amp;lt;EOT&amp;gt;critical&lt;/span&gt;
+&lt;span class="s"&gt;export introducer_furl=&amp;#39;pb://MyTubID@MyOnionAddress.onion:OnionPort/SuperSecretSwissnum&amp;#39;&lt;/span&gt;
+&lt;span class="s"&gt;root_cap=&amp;#39;URI:DIR2:aaaaaaaaabcaaaaaaaaaaaaaaa:kkkkkkkkkkkkkkfghkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk&amp;#39;&lt;/span&gt;
+&lt;span class="s"&gt;[client-server-selection]&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.type = tahoe-foolscap&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.nickname = RobotKillHuman&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.seed = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.furl = pb://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@cccccccccccccccc.onion:34273/cswisssssssssssssssssssssssssnum&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.type = tahoe-foolscap&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.nickname = RobotPlanetConspiracy&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.seed = bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.furl = pb://bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb@dddddddddddddddd.onion:34273/bswisssssssssssssssssssssssssnum&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-cccccccccccccccccccccccccccccccc.type = tahoe-foolscap&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-cccccccccccccccccccccccccccccccc.nickname = StorageForRobotsOnly&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-cccccccccccccccccccccccccccccccc.seed = cccccccccccccccccccccccccccccccc&lt;/span&gt;
+&lt;span class="s"&gt;server.v0-cccccccccccccccccccccccccccccccc.furl = pb://ccccccccccccccccccccccccccccccc@eeeeeeeeeeeeeeee.onion:34273/aswissssssssssssssssssssssssssnum&lt;/span&gt;
+&lt;span class="s"&gt;EOT&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Unfortunately we have not yet merged Leif Ryge's &lt;a href="https://github.com/leif/tahoe-lafs/tree/truckee"&gt;truckee feature branch&lt;/a&gt; of Tahoe-LAFS upstream.
+Use this truckee so that you have my &lt;strong&gt;introducer-less&lt;/strong&gt; feature which allows you to specify storage node connection information
+directly in your &lt;strong&gt;tahoe.cfg&lt;/strong&gt;... thus eliminating the introducer node as the single point of failure and success.&lt;/p&gt;
+&lt;p&gt;Currently I use DJB's NaCl SecretBox to verifiably encrypt/decrypt the critical connection
+information and root cap like this:
+&lt;a href="https://github.com/david415/hidden-tahoe-backup/blob/master/HiddenTahoeBackup/secretBox.py"&gt;secretBox.py&lt;/a&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;./secretBox.py --encrypt critical &amp;gt; critical.secretbox
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Make sure to pick a long entropic passphrase with enough interesting words.&lt;/p&gt;
+&lt;h4&gt;What does retrieval information of critical blob mean?&lt;/h4&gt;
+&lt;p&gt;Your threat model may permit you to publicly stash your critical blob
+in a memorable location such as:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;on a gist or github repo&lt;/li&gt;
+&lt;li&gt;in a tweet&lt;/li&gt;
+&lt;li&gt;in a blog post&lt;/li&gt;
+&lt;li&gt;web host at memorable url&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;On the other hand your threat model may advise against exposing your critical blob to cryptanalysis...
+You might prefer more covert methods of recovery:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;use ssh to retreive the file from a private shell account&lt;/li&gt;
+&lt;li&gt;Pond message a friend; retreive from friend directly&lt;/li&gt;
+&lt;li&gt;PGP e-mail a friend; retreive from friend directly&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Restore procedure:&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;acquire Tails disk&lt;/li&gt;
+&lt;li&gt;acquire critical ciphertext blob&lt;/li&gt;
+&lt;li&gt;decrypt ciphertext blob&lt;/li&gt;
+&lt;li&gt;configure Tahoe-LAFS client&lt;/li&gt;
+&lt;li&gt;download all your private data&lt;/li&gt;
+&lt;/ol&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">David Stainton</dc:creator><pubDate>Mon, 11 Aug 2014 16:00:00 +0200</pubDate><guid>tag:,2014-08-11:data-less-travel-opsec.html</guid><category>Tails</category><category>Tahoe-LAFS</category><category>Tor hidden services</category><category>Tor</category></item><item><title>simple Tails backup procedure with Tahoe-LAFS</title><link>/simple-tails-backup-procedure-with-tahoe-lafs.html</link><description>&lt;h4&gt;securely backup your &lt;a href="https://tails.boum.org/doc/first_steps/persistence/index.en.html"&gt;Tails persistent volume&lt;/a&gt; using Tahoe-LAFS over Tor&lt;/h4&gt;
 &lt;h3&gt;why Tahoe-LAFS?&lt;/h3&gt;
 &lt;p&gt;Do you backup your personal data?&lt;/p&gt;
 &lt;p&gt;Using Dropbox, AWS storage or Google Drive to backup data is a shameful act...

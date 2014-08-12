@@ -20,7 +20,107 @@
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="/simple-tails-backup-procedure-with-tahoe-lafs.html">simple Tails backup procedure with Tahoe-LAFS</a></h1>
+                    <h1 class="entry-title"><a href="/data-less-travel-opsec.html">"data-less" travel opsec</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2014-08-11T16:00:00">
+                Published: Mon 11 August 2014
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/david-stainton.html">David Stainton</a>
+        </address>
+<p>In <a href="/category/tails-tahoe-lafs.html">Tails, Tahoe-LAFS</a>. </p>
+<p>tags: <a href="/tag/tails.html">Tails</a> <a href="/tag/tahoe-lafs.html">Tahoe-LAFS</a> <a href="/tag/tor-hidden-services.html">Tor hidden services</a> <a href="/tag/tor.html">Tor</a> </p>
+</footer><!-- /.post-info --><h3>Operational security practices for international travel</h3>
+<p>aka</p>
+<h3>Secure Covert Backup Strategy for Tails using Tahoe-LAFS</h3>
+<p><strong>note:</strong> You may want to first read <a href="https://david415.github.io/simple-tails-backup-procedure-with-tahoe-lafs.html">Simple Tails Backup procedure with Tahoe-LAFS</a>
+if you are not yet familiar with Tahoe-LAFS</p>
+<h4>context</h4>
+<p>When traveling in surveilance states where there is risk of search of seizure... <strong>you do not want to be in posession of ciphertext, key material or other sensitive data</strong>. If you are detained and have ciphertext they can request you for the phassphrase to decrypt your data. Things may not go so well for you if you don't comply with their demands.</p>
+<p>To fulfill this objective we can reduce the complexity of 
+restoring our confidential backup to two pieces of information
+that can be remembered (and should not be written down):</p>
+<ol>
+<li>passphrase to unlock critical blob</li>
+<li>retreival information of critical blob</li>
+</ol>
+<p>Once you've setup several redundant hiding places for your critical ciphertext blob of Tahoe-LAFS information then you
+"secure erase" your drive(s) before traveling.</p>
+<h4>Create your critical ciphertext blob like this:</h4>
+<p>This critical blob contains Tahoe-LAFS cryptographic capabilities and grid connection information.
+That is... everything we need to restore all our sensitive data; key material and configuration files in my case.
+It's a total loss if an attacker gains access to our Tahoe-LAFS cryptographic capabilities.
+We therefore protect this data by symmetrically encrypting with an entropic passphrase.</p>
+<p>Create a textfile containing Tahoe-LAFS onion grid connection information and root cryptographic capability:</p>
+<div class="highlight"><pre>cat <span class="s">&lt;&lt;EOT&gt;critical</span>
+<span class="s">export introducer_furl=&#39;pb://MyTubID@MyOnionAddress.onion:OnionPort/SuperSecretSwissnum&#39;</span>
+<span class="s">root_cap=&#39;URI:DIR2:aaaaaaaaabcaaaaaaaaaaaaaaa:kkkkkkkkkkkkkkfghkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk&#39;</span>
+<span class="s">[client-server-selection]</span>
+<span class="s">server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.type = tahoe-foolscap</span>
+<span class="s">server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.nickname = RobotKillHuman</span>
+<span class="s">server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.seed = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</span>
+<span class="s">server.v0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.furl = pb://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@cccccccccccccccc.onion:34273/cswisssssssssssssssssssssssssnum</span>
+<span class="s">server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.type = tahoe-foolscap</span>
+<span class="s">server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.nickname = RobotPlanetConspiracy</span>
+<span class="s">server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.seed = bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb</span>
+<span class="s">server.v0-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.furl = pb://bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb@dddddddddddddddd.onion:34273/bswisssssssssssssssssssssssssnum</span>
+<span class="s">server.v0-cccccccccccccccccccccccccccccccc.type = tahoe-foolscap</span>
+<span class="s">server.v0-cccccccccccccccccccccccccccccccc.nickname = StorageForRobotsOnly</span>
+<span class="s">server.v0-cccccccccccccccccccccccccccccccc.seed = cccccccccccccccccccccccccccccccc</span>
+<span class="s">server.v0-cccccccccccccccccccccccccccccccc.furl = pb://ccccccccccccccccccccccccccccccc@eeeeeeeeeeeeeeee.onion:34273/aswissssssssssssssssssssssssssnum</span>
+<span class="s">EOT</span>
+</pre></div>
+
+
+<p>Unfortunately we have not yet merged Leif Ryge's <a href="https://github.com/leif/tahoe-lafs/tree/truckee">truckee feature branch</a> of Tahoe-LAFS upstream.
+Use this truckee so that you have my <strong>introducer-less</strong> feature which allows you to specify storage node connection information
+directly in your <strong>tahoe.cfg</strong>... thus eliminating the introducer node as the single point of failure and success.</p>
+<p>Currently I use DJB's NaCl SecretBox to verifiably encrypt/decrypt the critical connection
+information and root cap like this:
+<a href="https://github.com/david415/hidden-tahoe-backup/blob/master/HiddenTahoeBackup/secretBox.py">secretBox.py</a></p>
+<div class="highlight"><pre>./secretBox.py --encrypt critical &gt; critical.secretbox
+</pre></div>
+
+
+<p>Make sure to pick a long entropic passphrase with enough interesting words.</p>
+<h4>What does retrieval information of critical blob mean?</h4>
+<p>Your threat model may permit you to publicly stash your critical blob
+in a memorable location such as:</p>
+<ul>
+<li>on a gist or github repo</li>
+<li>in a tweet</li>
+<li>in a blog post</li>
+<li>web host at memorable url</li>
+</ul>
+<p>On the other hand your threat model may advise against exposing your critical blob to cryptanalysis...
+You might prefer more covert methods of recovery:</p>
+<ul>
+<li>use ssh to retreive the file from a private shell account</li>
+<li>Pond message a friend; retreive from friend directly</li>
+<li>PGP e-mail a friend; retreive from friend directly</li>
+</ul>
+<h3>Restore procedure:</h3>
+<ol>
+<li>acquire Tails disk</li>
+<li>acquire critical ciphertext blob</li>
+<li>decrypt ciphertext blob</li>
+<li>configure Tahoe-LAFS client</li>
+<li>download all your private data</li>
+</ol>                </article>
+            </aside><!-- /#featured -->
+                <section id="content" class="body">
+                    <h1>Other articles</h1>
+                    <hr />
+                    <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="/simple-tails-backup-procedure-with-tahoe-lafs.html" rel="bookmark"
+                           title="Permalink to simple Tails backup procedure with Tahoe-LAFS">simple Tails backup procedure with Tahoe-LAFS</a></h1>
+                </header>
+
+                <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2014-08-11T13:00:00">
                 Published: Mon 11 August 2014
@@ -31,192 +131,12 @@
         </address>
 <p>In <a href="/category/tails-tahoe-lafs.html">Tails, Tahoe-LAFS</a>. </p>
 <p>tags: <a href="/tag/tails.html">Tails</a> <a href="/tag/tahoe-lafs.html">Tahoe-LAFS</a> <a href="/tag/tor-hidden-services.html">Tor hidden services</a> <a href="/tag/tor.html">Tor</a> </p>
-</footer><!-- /.post-info --><h4>securely backup your <a href="https://tails.boum.org/doc/first_steps/persistence/index.en.html">Tails persistent volume</a> using Tahoe-LAFS over Tor</h4>
-<h3>why Tahoe-LAFS?</h3>
-<p>Do you backup your personal data?</p>
-<p>Using Dropbox, AWS storage or Google Drive to backup data is a shameful act...
-but we have a choice! We can choose to use verified end to end crypto... and join the <a href="http://www.activism.net/cypherpunk/manifesto.html">cypherpunks movement</a>.
-When you use Tahoe-LAFS you are choosing to be in control of the verifiability, confidentiality and erasure encoding or your data.</p>
-<p>Tahoe-LAFS storage servers only see ciphertext blobs... additionally the Tahoe-LAFS cryptographic "capabilities model"
-is essentially a distributed access control system. The storage servers do not authorize access to data; instead the possessor
-of the cryptographic capabilities can choose to share that capability... or "diminish" the cap before sharing;
-for instance ReadWrite caps can be dimished into ReadOnly caps etc.</p>
-<h3>why Tails?</h3>
-<p>Tails being a security hardened and easy to use Linux distribution is an excellent platform
-from which to run Tahoe-LAFS. Using Tails ensures that novice computer users can leverage Tahoe-LAFS's
-security features while reducing their risk of exposing another weak link in their system's security.
-The Tails dev team pays careful attention to entropy generation, clock sychronization,
-user space and kernel security hardening, firewall rules, frequent software security updates,
-expert peer review etc.</p>
-<h4>requirements:</h4>
-<ul>
-<li>Tails 1.1 or higher</li>
-<li>connecting information to a Tahoe-LAFS grid:</li>
-</ul>
-<p>A Tahoe-LAFS introducer FURL takes this form:</p>
-<div class="highlight"><pre><span class="nl">pb:</span><span class="c1">//TubID@MyOnion:OnionPort/swissnum</span>
-</pre></div>
-
-
-<p>...and looks like this:</p>
-<div class="highlight"><pre><span class="nl">pb:</span><span class="c1">//dsagndsgmndsg6dgnqtug983nfmsdh8g@dfd2jdhfgfh8shdf.onion:33000/agkhdags7gdslgshhsg98gsndsag8fdn</span>
-</pre></div>
-
-
-<h3>procedure :</h3>
-<h3>step 0: Install Tahoe-LAFS and create your configuration</h3>
-<div class="highlight"><pre>sudo apt-get install tahoe-lafs
-tahoe client-create ~/Persistent/.tahoe
-ln -s ~/Persistent/.tahoe ~/.tahoe
-</pre></div>
-
-
-<p><strong>replace ~/Persistent/.tahoe/tahoe.cfg with a config file like this:</strong></p>
-<div class="highlight"><pre><span class="k">[node]</span>
-<span class="na">nickname</span> <span class="o">=</span> <span class="s">client</span>
-<span class="na">web.reveal_storage_furls</span> <span class="o">=</span> <span class="s">true</span>
-<span class="na">web.port</span> <span class="o">=</span> <span class="s">tcp:7657:interface=127.0.0.1</span>
-<span class="na">web.static</span> <span class="o">=</span> <span class="s">public_html</span>
-<span class="na">tub.location</span> <span class="o">=</span> <span class="s">client.fakelocation:1</span>
-<span class="k">[client]</span>
-<span class="na">introducer.furl</span> <span class="o">=</span> <span class="s">pb://MyTubID@myHiddenService.onion:HiddenPort/introducer</span>
-<span class="na">shares.needed</span> <span class="o">=</span> <span class="s">3</span>
-<span class="na">shares.happy</span> <span class="o">=</span> <span class="s">5</span>
-<span class="na">shares.total</span> <span class="o">=</span> <span class="s">5</span>
-<span class="k">[storage]</span>
-<span class="na">enabled</span> <span class="o">=</span> <span class="s">false</span>
-<span class="k">[helper]</span>
-<span class="na">enabled</span> <span class="o">=</span> <span class="s">false</span>
-<span class="k">[drop_upload]</span>
-<span class="na">enabled</span> <span class="o">=</span> <span class="s">false</span>
-<span class="k">[client-server-selection]</span>
-</pre></div>
-
-
-<p><strong>NOTE:</strong> you'll want to adjust the shares.needed/happy/total appropriately for your grid!</p>
-<p><strong>NOTE: You absolutely must use the "tub.location" option otherwise
-Tahoe-LAFS will attempt to deanonymize your IP to the Introducer node.</strong></p>
-<p><strong>NOTE:</strong> We are reusing the I2P console port configuration in Tails for our own Tahoe-LAFS purposes... rather than show you how to modify the Tails ferm and foxyproxy configurations. That is, in the <strong>tahoe.cfg</strong> file the <strong>web.port</strong>
-is set to <strong>"tcp:7657:interface=127.0.0.1"</strong>
-This allows you to view the url in the Tails browser:
-<a href="http://127.0.0.1:7657/">http://127.0.0.1:7657/</a></p>
-<h3>step 1:  start your Tahoe-LAFS client</h3>
-<div class="highlight"><pre>usewithtor tahoe start
-</pre></div>
-
-
-<p>the tahoe node directory defaults to ~/.tahoe...
-so you must either setup a symlink or
-you can specify the tahoe node directory in the tahoe command:</p>
-<div class="highlight"><pre><span class="n">usewithtor</span> <span class="n">tahoe</span> <span class="n">start</span> <span class="n">elsewhere</span><span class="o">/</span><span class="p">.</span><span class="n">tahoe</span>
-</pre></div>
-
-
-<p>You'll want to check the gateway status using this URL before moving on to the next step:</p>
-<p><a href="http://127.0.0.1:7657/">http://127.0.0.1:7657/</a></p>
-<p>Once the gateway status page indicates your Tahoe-LAFS client has connected
-to most of the grid then you can use Tahoe-LAFS to backup/restore files.</p>
-<h3>step 2: use Tahoe-LAFS to backup your Tails disk</h3>
-<p><strong>create a backup alias</strong></p>
-<div class="highlight"><pre><span class="n">tahoe</span> <span class="n">create</span><span class="o">-</span><span class="n">alias</span> <span class="n">tails_backup</span>
-</pre></div>
-
-
-<p><strong>perform backups!</strong></p>
-<p>Perform the backup using the "tails_backup" alias like this:</p>
-<div class="highlight"><pre>tahoe backup --verbose ~/.ssh tails_backup:dotssh
-tahoe backup --verbose ~/.gnupg tails_backup:dotgnupg
-tahoe backup --verbose ~/Persistent tails_backup:Persistent
-</pre></div>
-
-
-<p>I ammend the last command to exclude some files like this:</p>
-<div class="highlight"><pre>tahoe backup --verbose --exclude<span class="o">=</span><span class="s1">&#39;ansible-tahoe-base*&#39;</span> --exclude<span class="o">=</span><span class="s1">&#39;incidents*&#39;</span> --exclude<span class="o">=</span><span class="s1">&#39;twistd.log&#39;</span> --exclude<span class="o">=</span><span class="s1">&#39;projects*&#39;</span> --exclude<span class="o">=</span><span class="s1">&#39;tahoe-lafs*&#39;</span> --exclude<span class="o">=</span><span class="s1">&#39;Music*&#39;</span> --exclude<span class="o">=</span><span class="s1">&#39;virtenv-*&#39;</span> --exclude<span class="o">=</span><span class="s1">&#39;virtualenv-*&#39;</span> --exclude<span class="o">=</span><span class="s1">&#39;go*&#39;</span> --exclude<span class="o">=</span><span class="s1">&#39;*.iso&#39;</span> ~/Persistent tails_backup:Persistent
-</pre></div>
-
-
-<h3>step 3: restore data</h3>
-<p>Generally you can restore your data like this from the latest snapshots:</p>
-<div class="highlight"><pre>tahoe cp --verbose -r tails_backup:dotssh/Latest ~/.ssh
-tahoe cp --verbose -r tails_backup:dotgnupg/Latest ~/.gnupg
-tahoe cp --verbose -r tails_backup:Persistent/Latest ~/Persistent
-</pre></div>
-
-
-<p>Or you might want to restore from an old snapshot in the archives:</p>
-<div class="highlight"><pre>tahoe cp --verbose -r tails_backup:Persistent/Archives/2014-07-27_12:11:41Z ~/Persistent
-</pre></div>
-
-
-<p>Of course to restore data from a total system data loss you will have to have
-an accessible backup of either your Tahoe-LAFS nodeDir (e.g. ~/.tahoe) or
-the Introducer FURL and any Tahoe capability aliases you used to store data on.</p>
-<p>I've got an opsec procedure for data-less travel and restore from onion grid;
-it's designed around encapsulating all the needed information in a small symmetrically encrypted blob
-that is hidden before wiping the drive(s) in preparation for international travel; thus temporarily locking
-the user out of all infrastructure and private key materials in case of search and seizure.
-Here's my attempt to automate much of this procedure:</p>
-<p><a href="https://github.com/david415/hidden-tahoe-backup">https://github.com/david415/hidden-tahoe-backup</a></p>
-<h3>Appendix A: Renew leases and Repair Tahoe-LAFS data</h3>
-<p>In the future after performing backups... if you want to be extra safe before a restore situation arises then
-it would be advisable to perform a repair on the data:</p>
-<div class="highlight"><pre>tahoe deep-check --repair --add-lease --verbose tails_backup:dotssh
-tahoe deep-check --repair --add-lease --verbose tails_backup:dotgnupg
-tahoe deep-check --repair --add-lease --verbose tails_backup:Persistent
-</pre></div>
-
-
-<p>or perhaps you only care about repairing the latest snapshot:</p>
-<div class="highlight"><pre>tahoe deep-check --repair --add-lease --verbose tails_backup:dotssh/Latest
-tahoe deep-check --repair --add-lease --verbose tails_backup:dotgnupg/Latest
-tahoe deep-check --repair --add-lease --verbose tails_backup:Persistent/Latest
-</pre></div>
-
-
-<h3>Appendix B: additional considerations for Tails users</h3>
-<p>You'll probably want to setup a dotfiles symlink for your .tahoe directory:</p>
-<div class="highlight"><pre>amnesia@amnesia:/live/persistence/TailsData_unlocked/dotfiles<span class="nv">$ </span>ln -s ~/Persistent/.tahoe
-amnesia@amnesia:/live/persistence/TailsData_unlocked/dotfiles<span class="nv">$ </span>ls -la .tahoe
-lrwxrwxrwx 1 amnesia amnesia 31 Aug 12 01:32 .tahoe -&gt; /home/amnesia/Persistent/.tahoe
-amnesia@amnesia:/live/persistence/TailsData_unlocked/dotfiles<span class="nv">$ </span>
-</pre></div>
-
-
-<p>As root add "tahoe-lafs" to /live/persistence/TailsData_unlocked/live-additional-software.conf so that your persistent volume will store
-a copy of the Tahoe-LAFS package which gets installed upon bootup.</p>
-<h3>Appendix C: why use torsocks (usewithtor)? got native Tor integration?</h3>
-<p>Yes... we are working on it... and we'll have native Tor integration for
-Tahoe-LAFS soon:</p>
-<ul>
-<li><a href="https://tahoe-lafs.org/trac/tahoe-lafs/ticket/517#comment:20">https://tahoe-lafs.org/trac/tahoe-lafs/ticket/517#comment:20</a></li>
-<li><a href="http://foolscap.lothar.com/trac/ticket/203">http://foolscap.lothar.com/trac/ticket/203</a></li>
-</ul>
-<h3>Appendix D: basic info</h3>
-<h4>what the hell is an onion grid?</h4>
-<p>An onion grid refers to a Tahoe-LAFS storage grid, a collection of Tahoe-LAFS storage servers
-that are only accessible via Tor hidden services. That means the identity/location of the
-storage servers are protected by the Tor network.</p>
-<p>At this time the Tor Project is redesigning Tor hidden services to have more powerful security and anonymity guarantees; <a href="https://blog.torproject.org/blog/hidden-services-need-some-love">Tor hidden services need some love</a>.
-Endeavors using Tahoe-LAFS onion grids will benefit from these future design changes to Tor Hidden Services.</p>
-<h4>more info</h4>
-<ul>
-<li>
-<p><a href="https://tails.boum.org/">Tails project website</a></p>
-</li>
-<li>
-<p><a href="https://www.torproject.org/">Tor project website</a></p>
-</li>
-<li>
-<p><a href="https://www.torproject.org/docs/hidden-services.html.en">Tor Hidden Servies explained</a></p>
-</li>
-<li>
-<p><a href="https://tahoe-lafs.org/trac/tahoe-lafs">Tahoe-LAFS project website</a></p>
-</li>
-<li>
-<p><a href="http://www.laser.dist.unige.it/Repository/IPI-1011/FileSystems/TahoeDFS.pdf">my favorite white paper about Tahoe-LAFS</a></p>
-</li>
-</ul>                </article>
-            </aside><!-- /#featured -->
+</footer><!-- /.post-info -->                <p>Use Tahoe-LAFS with Tails!</p>
+                <a class="readmore" href="/simple-tails-backup-procedure-with-tahoe-lafs.html">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+                </ol><!-- /#posts-list -->
+                </section><!-- /#content -->
         <section id="extras" class="body">
         </section><!-- /#extras -->
 
