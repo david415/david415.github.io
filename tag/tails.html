@@ -31,12 +31,29 @@
         </address>
 <p>In <a href="/category/tails-tahoe-lafs.html">Tails, Tahoe-LAFS</a>. </p>
 <p>tags: <a href="/tag/tails.html">Tails</a> <a href="/tag/tahoe-lafs.html">Tahoe-LAFS</a> <a href="/tag/tor-hidden-services.html">Tor hidden services</a> <a href="/tag/tor.html">Tor</a> </p>
-</footer><!-- /.post-info --><h4>requirements:</h4>
+</footer><!-- /.post-info --><h4>securely backup your <a href="https://tails.boum.org/doc/first_steps/persistence/index.en.html">Tails persistent volume</a> using Tahoe-LAFS over Tor</h4>
+<h3>why Tahoe-LAFS?</h3>
+<p>Do you backup your personal data?</p>
+<p>Using Dropbox, AWS storage or Google Drive to backup data is a shameful act...
+but we have a choice! We can choose to use verified end to end crypto... and join the <a href="http://www.activism.net/cypherpunk/manifesto.html">cypherpunks movement</a>.
+When you use Tahoe-LAFS you are choosing to be in control of the verifiability, confidentiality and erasure encoding or your data.</p>
+<p>Tahoe-LAFS storage servers only see ciphertext blobs... additionally the Tahoe-LAFS cryptographic "capabilities model"
+is essentially a distributed access control system. The storage servers do not authorize access to data; instead the possessor
+of the cryptographic capabilities can choose to share that capability... or "diminish" the cap before sharing;
+for instance ReadWrite caps can be dimished into ReadOnly caps etc.</p>
+<h3>why Tails?</h3>
+<p>Tails being a security hardened and easy to use Linux distribution is an excellent platform
+from which to run Tahoe-LAFS. Using Tails ensures that novice computer users can leverage Tahoe-LAFS's
+security features while reducing their risk of exposing another weak link in their system's security.
+The Tails dev team pays careful attention to entropy generation, clock sychronization,
+user space and kernel security hardening, firewall rules, frequent software security updates,
+expert peer review etc.</p>
+<h4>requirements:</h4>
 <ul>
 <li>Tails 1.1 or higher</li>
 <li>connecting information to a Tahoe-LAFS grid:</li>
 </ul>
-<p>A Tahoe-LAFS introducer FURL take this form:</p>
+<p>A Tahoe-LAFS introducer FURL takes this form:</p>
 <div class="highlight"><pre><span class="nl">pb:</span><span class="c1">//TubID@MyOnion:OnionPort/swissnum</span>
 </pre></div>
 
@@ -76,13 +93,13 @@ ln -s ~/Persistent/.tahoe ~/.tahoe
 </pre></div>
 
 
-<p><strong>NOTE: you'll want to adjust the shares.needed/happy/total appropriately for your grid!</strong></p>
+<p><strong>NOTE:</strong> you'll want to adjust the shares.needed/happy/total appropriately for your grid!</p>
 <p><strong>NOTE: You absolutely must use the "tub.location" option otherwise
 Tahoe-LAFS will attempt to deanonymize your IP to the Introducer node.</strong></p>
-<p><strong>NOTE: Take notice that the web.port is set to "tcp:7657:interface=127.0.0.1"
-This is set like this because the Tails I2P ferm firewall configuration and
-foxyproxy configurations allow the browser to retreive this url:</strong>
-http://127.0.0.1:7657/</p>
+<p><strong>NOTE:</strong> We are reusing the I2P console port configuration in Tails for our own Tahoe-LAFS purposes... rather than show you how to modify the Tails ferm and foxyproxy configurations. That is, in the <strong>tahoe.cfg</strong> file the <strong>web.port</strong>
+is set to <strong>"tcp:7657:interface=127.0.0.1"</strong>
+This allows you to view the url in the Tails browser:
+<a href="http://127.0.0.1:7657/">http://127.0.0.1:7657/</a></p>
 <h3>step 1:  start your Tahoe-LAFS client</h3>
 <div class="highlight"><pre>usewithtor tahoe start
 </pre></div>
@@ -95,7 +112,11 @@ you can specify the tahoe node directory in the tahoe command:</p>
 </pre></div>
 
 
-<h3>step 2:  use tahoe</h3>
+<p>You'll want to check the gateway status using this URL before moving on to the next step:</p>
+<p><a href="http://127.0.0.1:7657/">http://127.0.0.1:7657/</a></p>
+<p>Once the gateway status page indicates your Tahoe-LAFS client has connected
+to most of the grid then you can use Tahoe-LAFS to backup/restore files.</p>
+<h3>step 2: use Tahoe-LAFS to backup your Tails disk</h3>
 <p><strong>create a backup alias</strong></p>
 <div class="highlight"><pre><span class="n">tahoe</span> <span class="n">create</span><span class="o">-</span><span class="n">alias</span> <span class="n">tails_backup</span>
 </pre></div>
@@ -130,12 +151,12 @@ tahoe cp --verbose -r tails_backup:Persistent/Latest ~/Persistent
 <p>Of course to restore data from a total system data loss you will have to have
 an accessible backup of either your Tahoe-LAFS nodeDir (e.g. ~/.tahoe) or
 the Introducer FURL and any Tahoe capability aliases you used to store data on.</p>
-<p>I've got an operational security procedure designed around encapsulating this
-data in a tiny symmetrically encrypted blob that I then hide right before I
-wipe my drives in preparation to get on an airplane; thus temporarily locking
-myself out of all infrastructure and private key materials in case of
-search and seizure. Here's my attempt to automate much of this procedure:</p>
-<p>https://github.com/david415/hidden-tahoe-backup</p>
+<p>I've got an opsec procedure for data-less travel and restore from onion grid;
+it's designed around encapsulating all the needed information in a small symmetrically encrypted blob
+that is hidden before wiping the drive(s) in preparation for international travel; thus temporarily locking
+the user out of all infrastructure and private key materials in case of search and seizure.
+Here's my attempt to automate much of this procedure:</p>
+<p><a href="https://github.com/david415/hidden-tahoe-backup">https://github.com/david415/hidden-tahoe-backup</a></p>
 <h3>Appendix A: Renew leases and Repair Tahoe-LAFS data</h3>
 <p>In the future after performing backups... if you want to be extra safe before a restore situation arises then
 it would be advisable to perform a repair on the data:</p>
@@ -162,7 +183,39 @@ amnesia@amnesia:/live/persistence/TailsData_unlocked/dotfiles<span class="nv">$ 
 
 
 <p>As root add "tahoe-lafs" to /live/persistence/TailsData_unlocked/live-additional-software.conf so that your persistent volume will store
-a copy of the Tahoe-LAFS package which gets installed upon bootup.</p>                </article>
+a copy of the Tahoe-LAFS package which gets installed upon bootup.</p>
+<h3>Appendix C: why use torsocks (usewithtor)? got native Tor integration?</h3>
+<p>Yes... we are working on it... and we'll have native Tor integration for
+Tahoe-LAFS soon:</p>
+<ul>
+<li><a href="https://tahoe-lafs.org/trac/tahoe-lafs/ticket/517#comment:20">https://tahoe-lafs.org/trac/tahoe-lafs/ticket/517#comment:20</a></li>
+<li><a href="http://foolscap.lothar.com/trac/ticket/203">http://foolscap.lothar.com/trac/ticket/203</a></li>
+</ul>
+<h3>Appendix D: basic info</h3>
+<h4>what the hell is an onion grid?</h4>
+<p>An onion grid refers to a Tahoe-LAFS storage grid, a collection of Tahoe-LAFS storage servers
+that are only accessible via Tor hidden services. That means the identity/location of the
+storage servers are protected by the Tor network.</p>
+<p>At this time the Tor Project is redesigning Tor hidden services to have more powerful security and anonymity guarantees; <a href="https://blog.torproject.org/blog/hidden-services-need-some-love">Tor hidden services need some love</a>.
+Endeavors using Tahoe-LAFS onion grids will benefit from these future design changes to Tor Hidden Services.</p>
+<h4>more info</h4>
+<ul>
+<li>
+<p><a href="https://tails.boum.org/">Tails project website</a></p>
+</li>
+<li>
+<p><a href="https://www.torproject.org/">Tor project website</a></p>
+</li>
+<li>
+<p><a href="https://www.torproject.org/docs/hidden-services.html.en">Tor Hidden Servies explained</a></p>
+</li>
+<li>
+<p><a href="https://tahoe-lafs.org/trac/tahoe-lafs">Tahoe-LAFS project website</a></p>
+</li>
+<li>
+<p><a href="http://www.laser.dist.unige.it/Repository/IPI-1011/FileSystems/TahoeDFS.pdf">my favorite white paper about Tahoe-LAFS</a></p>
+</li>
+</ul>                </article>
             </aside><!-- /#featured -->
         <section id="extras" class="body">
         </section><!-- /#extras -->
