@@ -34,11 +34,16 @@
 </footer><!-- /.post-info --><h3>Operational security practices for international travel</h3>
 <p>aka</p>
 <h3>Secure Covert Backup Strategy for Tails using Tahoe-LAFS</h3>
-<p><strong>note:</strong> You may want to first read <a href="https://david415.github.io/simple-tails-backup-procedure-with-tahoe-lafs.html">Simple Tails Backup procedure with Tahoe-LAFS</a>
-if you are not yet familiar with Tahoe-LAFS</p>
+<p><strong>note:</strong> Tails is a good choice but this could be applied to other operating systems/Linux distros.
+In some ways this article is a continuation of <a href="https://david415.github.io/simple-tails-backup-procedure-with-tahoe-lafs.html">Simple Tails Backup procedure with Tahoe-LAFS</a></p>
 <h4>context</h4>
 <p>When traveling in surveilance states where there is risk of search of seizure... <strong>you do not want to be in posession of ciphertext, key material or other sensitive data</strong>. If you are detained and have ciphertext they can request you for the phassphrase to decrypt your data. Things may not go so well for you if you don't comply with their demands.</p>
-<p>To fulfill this objective we can reduce the complexity of 
+<p>To fulfill this objective of not carrying sensitive data we can choose to either carry benign data like
+a Tails disk with no Persistent volume... or no data at all. This means either "secure erasing" your drive(s).
+Perhaps some people will opt to not carry any drives at all. 
+Of course carrying no drives at all would mean that in the future you'll have to acquire an operating system
+and a drive to put it on... like Tails on a USB disk for instance.</p>
+<p>To meet this goal of not carrying any critical data we need to reduce the complexity of 
 restoring our confidential backup to two pieces of information
 that can be remembered (and should not be written down):</p>
 <ol>

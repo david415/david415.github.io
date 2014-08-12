@@ -2,11 +2,16 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>code sabbatical</title><link>/</link><description></description><atom:link href="/feeds/david-stainton.rss.xml" rel="self"></atom:link><lastBuildDate>Mon, 11 Aug 2014 16:00:00 +0200</lastBuildDate><item><title>"data-less" travel opsec</title><link>/data-less-travel-opsec.html</link><description>&lt;h3&gt;Operational security practices for international travel&lt;/h3&gt;
 &lt;p&gt;aka&lt;/p&gt;
 &lt;h3&gt;Secure Covert Backup Strategy for Tails using Tahoe-LAFS&lt;/h3&gt;
-&lt;p&gt;&lt;strong&gt;note:&lt;/strong&gt; You may want to first read &lt;a href="https://david415.github.io/simple-tails-backup-procedure-with-tahoe-lafs.html"&gt;Simple Tails Backup procedure with Tahoe-LAFS&lt;/a&gt;
-if you are not yet familiar with Tahoe-LAFS&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;note:&lt;/strong&gt; Tails is a good choice but this could be applied to other operating systems/Linux distros.
+In some ways this article is a continuation of &lt;a href="https://david415.github.io/simple-tails-backup-procedure-with-tahoe-lafs.html"&gt;Simple Tails Backup procedure with Tahoe-LAFS&lt;/a&gt;&lt;/p&gt;
 &lt;h4&gt;context&lt;/h4&gt;
 &lt;p&gt;When traveling in surveilance states where there is risk of search of seizure... &lt;strong&gt;you do not want to be in posession of ciphertext, key material or other sensitive data&lt;/strong&gt;. If you are detained and have ciphertext they can request you for the phassphrase to decrypt your data. Things may not go so well for you if you don't comply with their demands.&lt;/p&gt;
-&lt;p&gt;To fulfill this objective we can reduce the complexity of 
+&lt;p&gt;To fulfill this objective of not carrying sensitive data we can choose to either carry benign data like
+a Tails disk with no Persistent volume... or no data at all. This means either "secure erasing" your drive(s).
+Perhaps some people will opt to not carry any drives at all. 
+Of course carrying no drives at all would mean that in the future you'll have to acquire an operating system
+and a drive to put it on... like Tails on a USB disk for instance.&lt;/p&gt;
+&lt;p&gt;To meet this goal of not carrying any critical data we need to reduce the complexity of 
 restoring our confidential backup to two pieces of information
 that can be remembered (and should not be written down):&lt;/p&gt;
 &lt;ol&gt;
